@@ -326,7 +326,7 @@ cnf [filename] - create new file
 cnd [dirname] - create new directory
 csc - clear screen content
 etf [exename] - execute the file [exename]
-but [butname] - run a .but file
+butt [butname] - run a .but file
 qtp - quit the program
 help - displays this message
                 };
@@ -336,3 +336,4 @@ help - displays this message
         }
     }
 }
+
