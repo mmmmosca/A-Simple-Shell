@@ -5,18 +5,31 @@
 ## Commands list
 It has a very basic list of commands:
 `pcdc` - print current directory content
+
 `pcd` - print current directory
+
 `jtd [dir]` - jump to directory [dir]
+
 `jtpd` - jump to previous directory (you can also do "jtd ..")
+
 `rsf [file]` - remove specified file [file]
+
 `rsd [dir]` - remove specified directory [dir]
+
 `cnf [filename]` - create new file
+
 `cnd [dirname]` - create new directory
+
 `csc` - clear screen content
+
 `etf` [exename] - execute the file [exename]
+
 `but [butname]` - run a .but file
+
 `qtp` - quit the program
+
 `help` - displays the help message
+
 
 ## Butt: ASS's scripting language
 
