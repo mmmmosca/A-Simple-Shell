@@ -236,7 +236,7 @@ void runLines(string[] lines, size_t start = 0, size_t end = size_t.max) {
         switch (lineCmd) {
             case "print": if (lineArgs.length > 0) writeln(lineArgs.join(" ")); break;
             case "cnf": if (lineArgs.length > 0) { try { auto f = File(lineArgs.join(" "), "w"); f.close(); } catch (Exception e) { writeln(e.msg); } } break;
-            case "but": if (lineArgs.length > 0) runButScript(lineArgs.join(" ")); break;
+            case "butt": if (lineArgs.length > 0) runButtScript(lineArgs.join(" ")); break;
             case "pcdc":
                 foreach (entry; dirEntries(".", SpanMode.shallow))
                     writeln(entry.isDir ? "[DIR] " ~ entry.name : "[FILE] " ~ entry.name);
@@ -261,14 +261,18 @@ void runLines(string[] lines, size_t start = 0, size_t end = size_t.max) {
     }
 }
 
-// --- Run .but script ---
-void runButScript(string filename) {
+// --- Run .butt script ---
+void runButtScript(string filename) {
     if (!exists(filename)) {
         writeln("File not found: ", filename);
         return;
     }
-    auto lines = readText(filename).splitLines();
-    runLines(lines);
+    if(filename.canFind(".butt")){
+        auto lines = readText(filename).splitLines();
+        runLines(lines);
+    } else {
+        writeln("Error: Invalid file type, please make sure you're using a butt file");
+    }
 }
 
 
@@ -309,7 +313,7 @@ void main() {
                     catch(Exception e){ writeln("Failed to run: ", e.msg); }
                 }
                 break;
-            case "but": if(args.length > 0) runButScript(args.join(" ")); break;
+            case "butt": if(args.length > 0) runButtScript(args.join(" ")); break;
             case "help":
                 string help = q{
 pcdc - print current directory content
