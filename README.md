@@ -24,7 +24,7 @@ It has a very basic list of commands:
 
 `etf` [exename] - execute the file [exename]
 
-`but [butname]` - run a .but file
+`butt [butname]` - run a .but file
 
 `qtp` - quit the program
 
