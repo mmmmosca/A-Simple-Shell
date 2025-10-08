@@ -231,6 +231,9 @@ void runLines(string[] lines, size_t start = 0, size_t end = size_t.max) {
 
         if (input.empty || input.startsWith("#")) continue;
 
+        // Skip standalone block control keywords
+        if (input == "end" || input == "else") continue;
+
         // --- Variable assignment ---
         if (input.startsWith("$")) {
             handleAssignment(input);
@@ -264,7 +267,6 @@ void runLines(string[] lines, size_t start = 0, size_t end = size_t.max) {
             }
 
             if (count == -1) {
-                // Infinite loop
                 while (true) runLines(loopBody);
             } else {
                 foreach (_; 0 .. count) runLines(loopBody);
@@ -272,9 +274,9 @@ void runLines(string[] lines, size_t start = 0, size_t end = size_t.max) {
 
             continue;
         }
-        // --- Multiline IF blocks only ---
+
+        // --- Multiline IF ---
         if (cmd == "if") {
-            // Enforce "then" at the end and disallow inline commands
             if (!input.endsWith("then")) {
                 writeln("Syntax error: 'if' must end with 'then' and use multiline blocks.");
                 continue;
@@ -288,23 +290,17 @@ void runLines(string[] lines, size_t start = 0, size_t end = size_t.max) {
 
             while (i < end) {
                 string inner = lines[i].strip;
-
-                // Skip processing the "end" line outside this block
-                if (inner == "end" && nested == 1) {
-                    i++; // move past the 'end' line
-                    break;
-                }
-
                 i++;
 
                 if (inner.startsWith("if") && inner.endsWith("then")) {
                     nested++;
                 } else if (inner == "end") {
                     nested--;
-                    continue;
+                    if (nested == 0) break;
+                    continue; // skip nested ends
                 } else if (inner == "else" && nested == 1) {
                     inElse = true;
-                    continue;
+                    continue; // skip the else line
                 }
 
                 if (inElse)
@@ -321,9 +317,6 @@ void runLines(string[] lines, size_t start = 0, size_t end = size_t.max) {
             continue;
         }
 
-
-
-
         // --- Normal commands ---
         string expandedLine = expandVariables(input);
         auto lineTokens = expandedLine.split();
@@ -332,11 +325,13 @@ void runLines(string[] lines, size_t start = 0, size_t end = size_t.max) {
         string lineCmd = lineTokens[0];
         string[] lineArgs = lineTokens[1 .. $];
 
+        // Assignment shortcut
         if (lineCmd.startsWith("$") && lineArgs.length >= 2 && lineArgs[0] == "=") {
             handleAssignment(expandedLine);
             continue;
         }
 
+        // Commands switch...
         switch (lineCmd) {
             case "print": if (lineArgs.length > 0) writeln(lineArgs.join(" ")); break;
             case "cnf": if (lineArgs.length > 0) { try { auto f = File(lineArgs.join(" "), "w"); f.close(); } catch (Exception e) { writeln(e.msg); } } break;
@@ -352,14 +347,13 @@ void runLines(string[] lines, size_t start = 0, size_t end = size_t.max) {
             case "rsd": if (lineArgs.length > 0) { try { rmdirRecurse(lineArgs.join(" ")); } catch (Exception e) { writeln(e.msg); } } break;
             case "cnd": if (lineArgs.length > 0) { try { mkdir(lineArgs.join(" ")); } catch (Exception e) { writeln(e.msg); } } break;
             case "csc": version(Windows) system("cls"); else system("clear"); break;
-            case "etf":
-                ETF(lineArgs);
-                break;
+            case "etf": ETF(lineArgs); break;
             case "qtp": break;
             case "help": writeln("Help..."); break;
             default: writeln("Unknown command: ", lineCmd);
         }
     }
+
 }
 
 // --- Run .butt script ---
