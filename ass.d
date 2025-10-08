@@ -263,7 +263,13 @@ void runLines(string[] lines, size_t start = 0, size_t end = size_t.max) {
                 loopBody ~= inner;
             }
 
-            foreach (_; 0 .. count) runLines(loopBody);
+            if (count == -1) {
+                // Infinite loop
+                while (true) runLines(loopBody);
+            } else {
+                foreach (_; 0 .. count) runLines(loopBody);
+            }
+
             continue;
         }
 
