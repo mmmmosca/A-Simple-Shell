@@ -1,6 +1,7 @@
 import std;
 import core.stdc.stdlib;
 
+
 /*
                                 ASS - A Simple Shell
     The simplest shell. It does everything that every other shell does, but simpler
@@ -8,6 +9,80 @@ import core.stdc.stdlib;
     Date: 6/10/2025
     License: MIT
 */
+
+
+import std.stdio;
+import std.process;
+import std.string;
+import core.stdc.stdlib : malloc, free, exit;
+import core.stdc.string : strerror;
+import core.stdc.errno : errno;
+
+version (Posix) {
+    import core.sys.posix.unistd : fork, execvp, pid_t;
+    import core.sys.posix.sys.wait : waitpid, WEXITSTATUS;
+}
+
+// Helper function to run a process on Posix
+version (Posix)
+void runPosixProcess(string[] args) {
+    if (args.length == 0) {
+        writeln("ETF: missing program name");
+        return;
+    }
+
+    const(char)* program = toStringz(args[0]);
+    const(char)** argv = cast(const(char)**)malloc((args.length + 1) * (void*).sizeof);
+    foreach (i, arg; args)
+        argv[i] = toStringz(arg);
+    argv[args.length] = null;
+
+    pid_t pid = fork();
+    if (pid == 0) {
+        // Child process
+        execvp(program, argv);
+        // If execvp returns, it failed
+        stderr.writeln("ASS: failed to execute ", args[0], ": ", strerror(errno));
+        exit(1);
+    } else if (pid > 0) {
+        // Parent process
+        int status;
+        waitpid(pid, &status, 0);
+        writeln("Program exited with code ", WEXITSTATUS(status));
+    } else {
+        stderr.writeln("ASS: fork() failed!");
+    }
+
+    free(argv);
+}
+
+// Windows version using spawnProcess
+version (Windows)
+void runWindowsProcess(string[] args) {
+    if (args.length == 0) {
+        writeln("ETF: missing program name");
+        return;
+    }
+
+    try {
+        auto p = spawnProcess(args);
+        auto exitCode = wait(p);
+        writeln("Program exited with code ", exitCode);
+    } catch (Exception e) {
+        writeln("ETF error: ", e.msg);
+    }
+}
+
+// --- Call this from your command handling ---
+void ETF(string[] args) {
+    version (Posix) {
+        runPosixProcess(args);
+    } else version (Windows) {
+        runWindowsProcess(args);
+    }
+}
+
+
 
 string[] tokenize(string input) {
     string[] tokens;
@@ -30,27 +105,6 @@ string[] tokenize(string input) {
         tokens ~= current;
 
     return tokens;
-}
-
-void ETF(string[] args)
-{
-    if (args.length == 0) {
-        writeln("ETF: missing program name");
-        return;
-    }
-
-    string program = args[0];
-    string[] programArgs = args[1..$];
-
-    try {
-        // This launches the external program and waits for it to finish
-        auto result = spawnProcess([program] ~ programArgs);
-        auto exitCode = wait(result);
-        writeln("Process exited with code ", exitCode);
-    }
-    catch (Exception e) {
-        writeln("ETF error: ", e.msg);
-    }
 }
 
 string[string] vars;
@@ -270,53 +324,8 @@ void runLines(string[] lines, size_t start = 0, size_t end = size_t.max) {
             case "cnd": if (lineArgs.length > 0) { try { mkdir(lineArgs.join(" ")); } catch (Exception e) { writeln(e.msg); } } break;
             case "csc": version(Windows) system("cls"); else system("clear"); break;
             case "etf":
-                if (args.length > 0) {
-                    version (Posix) {
-                    string program = args[0];
-                    string[] programArgs = [program] ~ args[1 .. $];
-
-                    // Convert args to C-compatible null-terminated array
-                    const(char*)[] cArgs;
-                    foreach (a; programArgs)
-                        cArgs ~= cast(const char*)a.ptr;
-                    cArgs ~= null;
-
-                    pid_t pid = fork();
-
-                    if (pid == 0) {
-                        // Child process
-                        execvp(cArgs[0], cArgs.ptr);
-
-                        // If execvp returns, an error occurred
-                        import std.stdio : stderr;
-                        stderr.writeln("ASS: failed to execute ", program, ": ", strerror(errno));
-                        exit(1);
-                    }
-                    else if (pid > 0) {
-                        // Parent process
-                        int status = 0;
-                        waitpid(pid, &status, 0);
-                        writeln("Program exited with code ", WEXITSTATUS(status));
-                    }
-                    else {
-                        writeln("ASS: fork() failed!");
-                    }
-                }
-                else version (Windows) {
-                    import std.process : spawnProcess, wait;
-                    try {
-                        auto p = spawnProcess(args);
-                        auto result = wait(p);
-                        writeln("Program exited with code ", result);
-                    } catch (Exception e) {
-                        writeln("Failed to run process: ", e.msg);
-                    }
-                }
-            }
-            else {
-                writeln("Usage: etf [program] [args...]");
-            }
-            break;
+                ETF(lineArgs);
+                break;
             case "qtp": break;
             case "help": writeln("Help..."); break;
             default: writeln("Unknown command: ", lineCmd);
@@ -371,53 +380,8 @@ void main() {
             case "cnd": if(args.length > 0){ try{ mkdir(args.join(" ")); } catch(Exception e){ writeln(e.msg); } } break;
             case "csc": version(Windows) system("cls"); else system("clear"); break;
             case "etf":
-                if (args.length > 0) {
-                    version (Posix) {
-                    string program = args[0];
-                    string[] programArgs = [program] ~ args[1 .. $];
-
-                    // Convert args to C-compatible null-terminated array
-                    const(char*)[] cArgs;
-                    foreach (a; programArgs)
-                        cArgs ~= cast(const char*)a.ptr;
-                    cArgs ~= null;
-
-                    pid_t pid = fork();
-
-                    if (pid == 0) {
-                        // Child process
-                        execvp(cArgs[0], cArgs.ptr);
-
-                        // If execvp returns, an error occurred
-                        import std.stdio : stderr;
-                        stderr.writeln("ASS: failed to execute ", program, ": ", strerror(errno));
-                        exit(1);
-                    }
-                    else if (pid > 0) {
-                        // Parent process
-                        int status = 0;
-                        waitpid(pid, &status, 0);
-                        writeln("Program exited with code ", WEXITSTATUS(status));
-                    }
-                    else {
-                        writeln("ASS: fork() failed!");
-                    }
-                }
-                else version (Windows) {
-                    import std.process : spawnProcess, wait;
-                    try {
-                        auto p = spawnProcess(args);
-                        auto result = wait(p);
-                        writeln("Program exited with code ", result);
-                    } catch (Exception e) {
-                        writeln("Failed to run process: ", e.msg);
-                    }
-                }
-            }
-            else {
-                writeln("Usage: etf [program] [args...]");
-            }
-            break;
+                ETF(args);
+                break;
             case "butt": if(args.length > 0) runButtScript(args.join(" ")); break;
             case "help":
                 string help = q{
