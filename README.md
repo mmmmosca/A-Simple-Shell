@@ -34,6 +34,7 @@ It has a very basic list of commands:
 ## Butt: ASS's scripting language
 
 Butt uses ASS's commands with the addition of:
+- make comments with  `#`
 - `print` for outputting stuff
 - variables, defined like this: `$[varname] = [varvalue]` and if you insert a `@` as the value of a variable you can take user input
 - loops with the `loop` keyword which takes this syntax:
