@@ -31,7 +31,7 @@ It has a very basic list of commands:
 `help` - displays the help message
 
 
-## Butt: ASS's scripting language
+## BUTT (Basic and UTterly Terse): ASS's scripting language
 
 Butt uses ASS's commands with the addition of:
 - make comments with  `#`
