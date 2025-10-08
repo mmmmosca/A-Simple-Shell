@@ -42,4 +42,10 @@ Butt uses ASS's commands with the addition of:
     [code]
   end
   ```
+use -1 as the number of iterations for infinately looping:
+  ```
+  loop -1 do
+    [code]
+  end
+  ```
 - if statements which take up this other syntax: `if [cond] then [expr] else [expr]`
