@@ -272,34 +272,57 @@ void runLines(string[] lines, size_t start = 0, size_t end = size_t.max) {
 
             continue;
         }
-
-        // --- If ... then ... else ---
+        // --- Multiline IF blocks only ---
         if (cmd == "if") {
-            string rest = input[2 .. $].strip;
-            auto thenSplit = rest.split("then");
-            if (thenSplit.length < 2) { writeln("Invalid if statement: ", input); continue; }
-
-            string condition = thenSplit[0].strip;
-            string thenElse = thenSplit[1].strip;
-
-            string thenPart;
-            string elsePart;
-            if (thenElse.canFind("else")) {
-                auto parts = thenElse.split("else");
-                thenPart = parts[0].strip;
-                elsePart = parts[1].strip;
-            } else {
-                thenPart = thenElse;
-                elsePart = "";
+            // Enforce "then" at the end and disallow inline commands
+            if (!input.endsWith("then")) {
+                writeln("Syntax error: 'if' must end with 'then' and use multiline blocks.");
+                continue;
             }
 
-            if (evalCondition(condition)) {
-                if (!thenPart.empty) runLines([thenPart]);
-            } else {
-                if (!elsePart.empty) runLines([elsePart]);
+            string condition = input[2 .. $].replace("then", "").strip;
+            string[] thenBody;
+            string[] elseBody;
+            bool inElse = false;
+            int nested = 1;
+
+            while (i < end) {
+                string inner = lines[i].strip;
+
+                // Skip processing the "end" line outside this block
+                if (inner == "end" && nested == 1) {
+                    i++; // move past the 'end' line
+                    break;
+                }
+
+                i++;
+
+                if (inner.startsWith("if") && inner.endsWith("then")) {
+                    nested++;
+                } else if (inner == "end") {
+                    nested--;
+                    continue;
+                } else if (inner == "else" && nested == 1) {
+                    inElse = true;
+                    continue;
+                }
+
+                if (inElse)
+                    elseBody ~= inner;
+                else
+                    thenBody ~= inner;
             }
+
+            if (evalCondition(condition))
+                runLines(thenBody);
+            else
+                runLines(elseBody);
+
             continue;
         }
+
+
+
 
         // --- Normal commands ---
         string expandedLine = expandVariables(input);
