@@ -49,4 +49,11 @@ use -1 as the number of iterations for infinately looping:
     [code]
   end
   ```
-- if statements which take up this other syntax: `if [cond] then [expr] else [expr]`
+- if statements which take up this other syntax:
+  ```
+  if [cond] then
+    [expr]
+  else
+    [expr]
+  end
+  ```
