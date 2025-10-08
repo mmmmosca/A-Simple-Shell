@@ -32,6 +32,27 @@ string[] tokenize(string input) {
     return tokens;
 }
 
+void ETF(string[] args)
+{
+    if (args.length == 0) {
+        writeln("ETF: missing program name");
+        return;
+    }
+
+    string program = args[0];
+    string[] programArgs = args[1..$];
+
+    try {
+        // This launches the external program and waits for it to finish
+        auto result = spawnProcess([program] ~ programArgs);
+        auto exitCode = wait(result);
+        writeln("Process exited with code ", exitCode);
+    }
+    catch (Exception e) {
+        writeln("ETF error: ", e.msg);
+    }
+}
+
 string[string] vars;
 
 // --- Expression evaluator ---
@@ -249,11 +270,53 @@ void runLines(string[] lines, size_t start = 0, size_t end = size_t.max) {
             case "cnd": if (lineArgs.length > 0) { try { mkdir(lineArgs.join(" ")); } catch (Exception e) { writeln(e.msg); } } break;
             case "csc": version(Windows) system("cls"); else system("clear"); break;
             case "etf":
-                if (lineArgs.length > 0) {
-                    try { auto result = execute([lineArgs[0]] ~ lineArgs[1 .. $]); writeln("Exit code: ", result.status); }
-                    catch (Exception e) { writeln("Failed to run: ", e.msg); }
+                if (args.length > 0) {
+                    version (Posix) {
+                    string program = args[0];
+                    string[] programArgs = [program] ~ args[1 .. $];
+
+                    // Convert args to C-compatible null-terminated array
+                    const(char*)[] cArgs;
+                    foreach (a; programArgs)
+                        cArgs ~= cast(const char*)a.ptr;
+                    cArgs ~= null;
+
+                    pid_t pid = fork();
+
+                    if (pid == 0) {
+                        // Child process
+                        execvp(cArgs[0], cArgs.ptr);
+
+                        // If execvp returns, an error occurred
+                        import std.stdio : stderr;
+                        stderr.writeln("ASS: failed to execute ", program, ": ", strerror(errno));
+                        exit(1);
+                    }
+                    else if (pid > 0) {
+                        // Parent process
+                        int status = 0;
+                        waitpid(pid, &status, 0);
+                        writeln("Program exited with code ", WEXITSTATUS(status));
+                    }
+                    else {
+                        writeln("ASS: fork() failed!");
+                    }
                 }
-                break;
+                else version (Windows) {
+                    import std.process : spawnProcess, wait;
+                    try {
+                        auto p = spawnProcess(args);
+                        auto result = wait(p);
+                        writeln("Program exited with code ", result);
+                    } catch (Exception e) {
+                        writeln("Failed to run process: ", e.msg);
+                    }
+                }
+            }
+            else {
+                writeln("Usage: etf [program] [args...]");
+            }
+            break;
             case "qtp": break;
             case "help": writeln("Help..."); break;
             default: writeln("Unknown command: ", lineCmd);
@@ -308,11 +371,53 @@ void main() {
             case "cnd": if(args.length > 0){ try{ mkdir(args.join(" ")); } catch(Exception e){ writeln(e.msg); } } break;
             case "csc": version(Windows) system("cls"); else system("clear"); break;
             case "etf":
-                if(args.length > 0){
-                    try { auto result = execute([args[0]] ~ args[1 .. $]); writeln("Exit code: ", result.status); }
-                    catch(Exception e){ writeln("Failed to run: ", e.msg); }
+                if (args.length > 0) {
+                    version (Posix) {
+                    string program = args[0];
+                    string[] programArgs = [program] ~ args[1 .. $];
+
+                    // Convert args to C-compatible null-terminated array
+                    const(char*)[] cArgs;
+                    foreach (a; programArgs)
+                        cArgs ~= cast(const char*)a.ptr;
+                    cArgs ~= null;
+
+                    pid_t pid = fork();
+
+                    if (pid == 0) {
+                        // Child process
+                        execvp(cArgs[0], cArgs.ptr);
+
+                        // If execvp returns, an error occurred
+                        import std.stdio : stderr;
+                        stderr.writeln("ASS: failed to execute ", program, ": ", strerror(errno));
+                        exit(1);
+                    }
+                    else if (pid > 0) {
+                        // Parent process
+                        int status = 0;
+                        waitpid(pid, &status, 0);
+                        writeln("Program exited with code ", WEXITSTATUS(status));
+                    }
+                    else {
+                        writeln("ASS: fork() failed!");
+                    }
                 }
-                break;
+                else version (Windows) {
+                    import std.process : spawnProcess, wait;
+                    try {
+                        auto p = spawnProcess(args);
+                        auto result = wait(p);
+                        writeln("Program exited with code ", result);
+                    } catch (Exception e) {
+                        writeln("Failed to run process: ", e.msg);
+                    }
+                }
+            }
+            else {
+                writeln("Usage: etf [program] [args...]");
+            }
+            break;
             case "butt": if(args.length > 0) runButtScript(args.join(" ")); break;
             case "help":
                 string help = q{
@@ -336,5 +441,3 @@ help - displays this message
         }
     }
 }
-
-
