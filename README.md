@@ -28,7 +28,7 @@ It has a very basic list of commands:
 
 `butt [butname]` - run a .but file
 
-`timi [timname]` - run a .tim file (see [Timballo](https://githun.com/mmmmosca/Timballo))
+`timi [timname]` - run a .tim file (see [Timballo](https://github.com/mmmmosca/Timballo))
 
 `edit [filename]` - edit the contents of a file
 
