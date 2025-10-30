@@ -6,6 +6,8 @@
 It has a very basic list of commands:
 `pcdc` - print current directory content
 
+`pfc [filename]` - print the contents of a file
+
 `pcd` - print current directory
 
 `jtd [dir]` - jump to directory [dir]
@@ -25,6 +27,10 @@ It has a very basic list of commands:
 `etf` [exename] - execute the file [exename]
 
 `butt [butname]` - run a .but file
+
+`timi [timname]` - run a .tim file (see [Timballo](https://githun.com/mmmmosca/Timballo))
+
+`edit [filename]` - edit the contents of a file
 
 `qtp` - quit the program
 
